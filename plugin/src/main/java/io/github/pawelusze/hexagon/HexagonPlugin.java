@@ -209,6 +209,8 @@ public final class HexagonPlugin extends JavaPlugin implements Listener {
             return;
         }
 
-        LOG.info("Loaded {} region(s)", this.regions.load());
+        long startedAt = System.nanoTime();
+        int loaded = this.regions.load();
+        LOG.info("Loaded {} region(s) in {} ms", loaded, (System.nanoTime() - startedAt) / 1_000_000L);
     }
 }
