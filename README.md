@@ -81,12 +81,17 @@ chunks, where events happen and where WorldGuard has warmed its chunk cache, as 
 
 Paper 1.21.9, Apple M2, JDK 25, WorldGuard 7.0.14, 100 000 queries per round, median of 5:
 
-| Regions | Regions at a block | | PvP flag at a block | | Creating the regions | |
-| --- | --- | --- | --- | --- | --- | --- |
-| | **Hexagon** | WorldGuard | **Hexagon** | WorldGuard | **Hexagon** | WorldGuard |
-| 100 | **67 ns** | 340 ns | **56 ns** | 666 ns | **14 ms** | 55 ms |
-| 1 000 | **79 ns** | 331 ns | **56 ns** | 502 ns | **52 ms** | 1 045 ms |
-| 10 000 | **78 ns** | 512 ns | **63 ns** | 412 ns | **191 ms** | 67 288 ms |
+| Question | Regions | Hexagon | WorldGuard |
+| --- | --- | --- | --- |
+| Which regions cover this block? | 100 | **67 ns** | 340 ns |
+| | 1 000 | **79 ns** | 331 ns |
+| | 10 000 | **78 ns** | 512 ns |
+| Does `pvp` allow this block? | 100 | **56 ns** | 666 ns |
+| | 1 000 | **56 ns** | 502 ns |
+| | 10 000 | **63 ns** | 412 ns |
+| Creating the regions through the API | 100 | **14 ms** | 55 ms |
+| | 1 000 | **52 ms** | 1 045 ms |
+| | 10 000 | **191 ms** | 67 288 ms |
 
 Hexagon keeps its chunks in a table with primitive `long` keys, reads it without locks, resolves a
 world by id instead of asking Bukkit for its key (which allocates), and stops at the first region
