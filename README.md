@@ -1,12 +1,31 @@
-# Hexagon
+<h1 align="center">Hexagon</h1>
 
-Region protection for [Paper](https://papermc.io) 1.21.9+, on Java 25. Typed flags, roles instead
-of owner lists, WorldEdit selections, and a public API.
+<p align="center">
+  <b>Region protection for Paper, built for servers that outgrew guesswork.</b><br>
+  Typed flags, roles instead of owner lists, WorldEdit selections, and an API you can build on.
+</p>
 
-Needs WorldEdit or FastAsyncWorldEdit; LuckPerms is optional and lets roles go to permission
-groups. Drop the jar in `plugins/` and start the server.
+<p align="center">
+  <img alt="Paper 1.21.9+" src="https://img.shields.io/badge/Paper-1.21.9%2B-b80c00?style=for-the-badge&logo=papermc&logoColor=white">
+  <img alt="Java 25" src="https://img.shields.io/badge/Java-25-b80c00?style=for-the-badge&logo=openjdk&logoColor=white">
+  <img alt="MIT" src="https://img.shields.io/badge/License-MIT-b80c00?style=for-the-badge">
+</p>
 
-## Commands
+## 🚀 Get going
+
+Drop the jar in `plugins/`, start the server, protect your spawn in four lines:
+
+```
+//wand                              # left click one corner, right click the other
+/hx create spawn                    # your selection is now a region
+/hx flag spawn pvp deny             # no fighting here
+/hx trust spawn Notch owner         # someone to look after it
+```
+
+WorldEdit or FastAsyncWorldEdit is required — that is where the selection comes from. LuckPerms is
+optional and lets you trust whole permission groups: `/hx trust spawn group:vip member`.
+
+## 📋 Commands
 
 `/hexagon` and `/hx` are the same command, and `/hx help` explains all of it in game. Mark an area
 with `//wand` first.
@@ -22,7 +41,7 @@ with `//wand` first.
 | `/hx priority <region> <number>` | Where regions overlap, the higher number decides. |
 | `/hx reload` | Reread `config.yml` and `messages.yml`. |
 
-## Flags
+## 🚩 Flags
 
 | Flag | Type | Applies to |
 | --- | --- | --- |
@@ -47,12 +66,12 @@ and the player's role *in that region* is checked against the flag's scope.
 Game rules are ordinary flags, so they share priority, storage and the API. `/hx gamerules` lists
 the ones that can be scoped to a cuboid; the command explains why the others cannot.
 
-## Permissions
+## 🔑 Permissions
 
 `hexagon.view` for reading, `hexagon.manage` for any region (owners manage their own without it),
 `hexagon.teleport`, `hexagon.admin` for reload, `hexagon.bypass` to ignore all protection.
 
-## Performance
+## ⚡ Performance
 
 Every block a player breaks, places, walks over or hits asks one question: which regions cover it?
 [`benchmark/`](benchmark) puts that question to Hexagon and to both of WorldGuard's indexes, same
@@ -72,7 +91,7 @@ has cached a chunk, its table is about 2× faster than Hexagon from 10 000 regio
 ./gradlew :hexagon-benchmark:jmh
 ```
 
-## API
+## 🔌 API
 
 ```kotlin
 compileOnly("io.github.pawelusze:hexagon-api:1.0.0")
@@ -93,7 +112,7 @@ hexagon.regions().find(RegionId.of("spawn"))
 Events: `RegionCreatedEvent`, `RegionUpdatedEvent`, `RegionDeletedEvent`, and the cancellable
 `RegionEnterEvent` and `RegionLeaveEvent`.
 
-## Building
+## 🛠 Building
 
 ```bash
 ./gradlew build            # jar in plugin/build/libs/
