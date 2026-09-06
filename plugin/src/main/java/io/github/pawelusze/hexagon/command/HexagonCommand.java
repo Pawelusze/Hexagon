@@ -46,6 +46,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.bukkit.GameRule;
@@ -82,7 +83,7 @@ public final class HexagonCommand {
     private final Messenger messenger;
     private final Supplier<PluginConfig> config;
     private final Supplier<MessagesConfig> messages;
-    private final Runnable reload;
+    private final Consumer<Runnable> reload;
 
     public HexagonCommand(
             @NotNull Server server,
@@ -90,7 +91,7 @@ public final class HexagonCommand {
             @NotNull Messenger messenger,
             @NotNull Supplier<PluginConfig> config,
             @NotNull Supplier<MessagesConfig> messages,
-            @NotNull Runnable reload) {
+            @NotNull Consumer<Runnable> reload) {
         this.server = server;
         this.regions = hexagon.regions();
         this.query = hexagon.query();
@@ -446,8 +447,7 @@ public final class HexagonCommand {
     @Execute(name = "reload")
     @Permission("hexagon.admin")
     public void executeReload(@Sender CommandSender sender) {
-        this.reload.run();
-        this.messenger.send(sender, this.messages.get().reloaded);
+        this.reload.accept(() -> this.messenger.send(sender, this.messages.get().reloaded));
     }
 
     private void sendPage(CommandSender sender, String worldName, Collection<Region> found, @Nullable Integer page) {

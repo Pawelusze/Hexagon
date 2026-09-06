@@ -190,9 +190,29 @@ public final class HexagonPlugin extends JavaPlugin implements Listener {
         builder.argument((Class) type, (ArgumentResolverBase) resolver);
     }
 
-    private void reload() {
+    /**
+     * Rereads the configuration on the spot and the region files on a background thread, because
+     * ten thousand of them take the better part of a second to parse and the server is running.
+     * Protection keeps working from the current regions until the new ones are installed.
+     */
+    private void reload(Runnable whenDone) {
         this.applyConfiguration();
-        this.loadRegions();
+
+        DefaultRegionService regions = this.regions;
+        if (regions == null) {
+            whenDone.run();
+            return;
+        }
+
+        getServer().getAsyncScheduler().runNow(this, _ -> {
+            long startedAt = System.nanoTime();
+            DefaultRegionService.Snapshot parsed = regions.read();
+            long readMillis = (System.nanoTime() - startedAt) / 1_000_000L;
+            getServer().getGlobalRegionScheduler().run(this, _ -> {
+                LOG.info("Reloaded {} region(s) in {} ms off the main thread", regions.install(parsed), readMillis);
+                whenDone.run();
+            });
+        });
     }
 
     private boolean applyConfiguration() {
