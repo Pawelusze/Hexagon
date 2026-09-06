@@ -27,6 +27,7 @@ dependencyResolutionManagement {
 
 rootProject.name = "hexagon"
 
-include("api", "plugin")
+include("api", "plugin", "benchmark")
 project(":api").name = "hexagon-api"
 project(":plugin").name = "hexagon-plugin"
+project(":benchmark").name = "hexagon-benchmark"

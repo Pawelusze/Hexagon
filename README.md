@@ -1,76 +1,77 @@
 # Hexagon
 
-Modern region protection for [Paper](https://papermc.io) 1.21.9+. A clean, typed alternative to
-WorldGuard with a small public API, LuckPerms-aware roles, and commands built for speed.
-
-- **Java 25**, Paper API only, no Bukkit legacy paths.
-- **Immutable regions** stored one-per-file in YAML (`plugins/Hexagon/regions/<id>.yml`).
-- **Typed flags**: `allow`/`deny` states, material and potion-effect rules with up to 64 targets,
-  and MiniMessage texts for greetings and farewells.
-- **Roles** instead of owners/members: `guest` (may enter), `member` (may build), `owner` (may
-  manage). Roles are granted to players or to permission groups (`group:vip`).
-- **MiniMessage first**, legacy `&` codes second. Every message lives in `messages.yml`.
-- **WorldEdit selections**: no second wand to learn, no parallel selection state.
-- Libraries are resolved at startup through Paper's library loader, so the jar stays small.
+Region protection for [Paper](https://papermc.io) 1.21.9+, on Java 25. Typed flags, roles instead
+of owner lists, WorldEdit selections, and a public API other plugins can build on.
 
 ## Requirements
 
-Paper 1.21.9 or newer, and **WorldEdit or FastAsyncWorldEdit**. Hexagon uses their selection for
-every command that needs an area, so it refuses to load without one of them. LuckPerms is
-optional: with it, roles can be granted to permission groups.
+Paper 1.21.9 or newer and **WorldEdit or FastAsyncWorldEdit** — every command that needs an area
+reads your WorldEdit selection, so Hexagon refuses to load without one of them. LuckPerms is
+optional and lets roles be granted to permission groups.
+
+## Install
+
+Drop `Hexagon-<version>.jar` into `plugins/` and start the server. Configuration lives in
+`plugins/Hexagon/config.yml` and `messages.yml`, regions in `plugins/Hexagon/regions/<id>.yml`,
+one file each.
 
 ## Commands
 
-`/hexagon` and `/hx` are interchangeable. Areas come from your WorldEdit selection, so mark one
-with `//wand` (left click, right click) or `//pos1` and `//pos2` before creating or redefining a
-region.
+`/hexagon` and `/hx` are the same command. Mark an area with `//wand` first, then:
 
 | Command | Purpose |
 | --- | --- |
-| `/hx help` (or plain `/hx`) | What every subcommand does. |
-| `/hx create <id>` (`define`) | Create a region from your WorldEdit selection. |
-| `/hx delete <id>` | Delete a region. |
-| `/hx resize <id>` (`redefine`) | Replace the bounds with your current selection. |
-| `/hx select <id>` | Load a region's bounds back into your WorldEdit selection. |
-| `/hx priority <id> <priority>` | Change the priority; on overlap the higher number decides. New regions start at 0. |
-| `/hx flag <id> <flag> [value]` | Show or set a flag; tab completion offers the values that flag accepts. |
-| `/hx unflag <id> <flag>` | Clear a flag. |
-| `/hx flags` | List every known flag and its scope. |
-| `/hx gamerule <id> <rule> [value]` | Show or set a vanilla game rule for the region. |
-| `/hx ungamerule <id> <rule>` | Let the region follow the world's game rule again. |
-| `/hx gamerules` | List the game rules that can be set per region. |
-| `/hx trust <id> <player\|group> [guest\|member\|owner]` | Grant a role (defaults to `member`). |
-| `/hx untrust <id> <player\|group>` | Revoke a role. |
-| `/hx info [id]` | Details of a region, or of the region you stand in. |
+| `/hx help` | What every subcommand does. Plain `/hx` shows it too. |
+| `/hx create <name>` | Turn your selection into a region. |
+| `/hx resize <region>` | Move a region onto your current selection. |
+| `/hx delete <region>` | Delete a region. |
+| `/hx info [region]` | Size, roles and flags, or of the region you stand in. |
 | `/hx list [world] [page]` | List regions. |
-| `/hx teleport <id>` (`tp`) | Teleport on top of a region's centre. |
-| `/hx reload` | Reload `config.yml` and `messages.yml`. |
+| `/hx select <region>` | Load a region back into your WorldEdit selection. |
+| `/hx teleport <region>` | Teleport on top of a region. |
+| `/hx trust <region> <player\|group> [role]` | Grant `guest`, `member` (default) or `owner`. |
+| `/hx untrust <region> <player\|group>` | Revoke a role. |
+| `/hx flag <region> <flag> [value]` | Show or set a flag; tab completion offers its values. |
+| `/hx unflag <region> <flag>` | Clear a flag. |
+| `/hx flags` | Every flag, what it accepts, and who it applies to. |
+| `/hx gamerule <region> <rule> [true\|false]` | Set a vanilla game rule inside the region. |
+| `/hx ungamerule <region> <rule>` | Follow the world's game rule again. |
+| `/hx gamerules` | The game rules that work per region. |
+| `/hx priority <region> <number>` | Where regions overlap, the higher number decides. |
+| `/hx reload` | Reread `config.yml` and `messages.yml`. |
 
-### Flag values
+`create` also answers to `define`, and `resize` to `redefine`.
+
+## Flags
+
+| Flag | Type | Applies to |
+| --- | --- | --- |
+| `block-break`, `block-place` | material rule | non-members |
+| `interact` | `allow` / `deny` | non-members |
+| `entry`, `exit` | `allow` / `deny` | players without any role |
+| `pvp`, `damage`, `elytra`, `totem`, `explosions` | `allow` / `deny` | everyone |
+| `potion-effects` | potion effect rule | everyone |
+| `greeting`, `farewell` | MiniMessage text | everyone |
+
+A rule reads as `<allow\|deny> [targets]`. Without targets the state covers everything; with
+targets it covers the listed elements and the opposite covers the rest, up to 64 targets.
 
 ```
 /hx flag spawn pvp deny
-/hx flag spawn block-place deny             # nobody but members places blocks
-/hx flag spawn block-place allow torch      # non-members may place only torches
-/hx flag spawn block-break deny tnt,lava    # non-members may break everything except TNT and lava
+/hx flag spawn block-place allow torch        # non-members may place only torches
+/hx flag spawn block-break deny tnt,lava      # non-members may break anything but TNT and lava
 /hx flag arena potion-effects deny strength,speed
 /hx flag spawn greeting <green>Welcome to <region>, <player>!
 ```
 
-Rules read as `<allow|deny> [targets]`: without targets the state applies to everything; with
-targets it applies to the listed elements and the opposite applies to the rest.
+Among the regions covering a block, ordered by priority, the first one that sets a flag decides,
+and the player's role *in that region* is checked against the flag's scope. `hexagon.bypass`
+ignores every flag.
 
 ## Game rules
 
-A region can override the vanilla game rules that Hexagon can enforce inside a cuboid:
-
-```
-/hx gamerule spawn keepInventory true
-/hx gamerule arena naturalRegeneration false
-/hx ungamerule spawn keepInventory
-```
-
-Hexagon supports every vanilla rule it can actually enforce inside a cuboid:
+Vanilla game rules a region can override, stored as ordinary flags and shown by `/hx info` in
+kebab case (`keep-inventory`):
 
 | Area | Rules |
 | --- | --- |
@@ -81,42 +82,55 @@ Hexagon supports every vanilla rule it can actually enforce inside a cuboid:
 | Explosions and loot | `tntExplodes`, `tntExplosionDropDecay`, `mobExplosionDropDecay`, `blockExplosionDropDecay`, `doMobLoot` |
 | Travel | `allowEnteringNetherUsingPortals` |
 
-The rest of the vanilla rules are missing for a reason, and the command says which reason applies.
-`doDaylightCycle`, `randomTickSpeed` and their kind are answered by the server for a whole world,
-so no plugin can scope them to a cuboid. `pvp` is covered by Hexagon's own `pvp` flag, which adds
-roles and the bypass permission on top.
-
-Game rules are stored as ordinary flags, so they share priority resolution, storage and the API
-with every other flag, and `/hx info` shows them in kebab case as `keep-inventory`.
-
-## Flags
-
-| Flag | Type | Applies to |
-| --- | --- | --- |
-| `block-break`, `block-place` | material rule | non-members |
-| `interact` | state | non-members |
-| `entry`, `exit` | state | outsiders (players without any role) |
-| `pvp`, `damage`, `elytra`, `totem`, `explosions` | state | everyone |
-| `potion-effects` | potion effect rule | everyone |
-| `greeting`, `farewell` | MiniMessage text | everyone |
-
-Resolution: among the regions covering a block, ordered by priority, the first one that sets the
-flag decides. A player's role in *that* region is checked against the flag's scope. Players with
-`hexagon.bypass` ignore every flag.
+The rest are absent on purpose, and the command says why: rules like `doDaylightCycle` are
+answered by the server for a whole world, and `pvp` is covered by the `pvp` flag, which adds roles
+and the bypass permission on top.
 
 ## Permissions
 
 | Permission | Grants |
 | --- | --- |
-| `hexagon.manage` | Create regions and manage any region. Owners manage their own regions without it. |
-| `hexagon.view` | `/hx info`, `/hx list`, `/hx flags`. |
+| `hexagon.view` | `/hx info`, `/hx list`, `/hx flags`, `/hx help`. |
+| `hexagon.manage` | Create and manage any region. Owners manage their own without it. |
 | `hexagon.teleport` | `/hx teleport`. |
 | `hexagon.admin` | `/hx reload`. |
 | `hexagon.bypass` | Ignore all protection. |
 
-## API
+## Performance
 
-Add the API module as a compile-only dependency and declare Hexagon in `paper-plugin.yml`.
+Protection costs one question, asked for every block a player breaks, places, walks over or hits:
+*which regions cover this block?* [`benchmark/`](benchmark) puts that question to Hexagon and to
+both of WorldGuard's own indexes, with the same regions and the same blocks in the same JVM.
+
+Average time per lookup. Apple M2, JDK 25, WorldGuard 7.0.14, 2 forks × 5 × 2 s:
+
+| Regions in the world | Hexagon | WorldGuard, chunk cache | WorldGuard, R-tree |
+| --- | --- | --- | --- |
+| 100 | **20 ns** | 25 ns | 104 ns |
+| 10 000 | 103 ns | **28 ns** | 921 ns |
+| 50 000 | 131 ns | **57 ns** | 2 549 ns |
+
+Read honestly: Hexagon beats WorldGuard's R-tree by 5× to 19×, and that R-tree is what answers
+every block in a chunk WorldGuard has not cached. Once WorldGuard has cached a chunk — it does so
+on chunk load, on a background thread — its table answers faster than Hexagon, roughly 2× from
+10 000 regions up. Hexagon reaches its numbers with no cache, no background thread, and no memory
+that grows with the number of loaded chunks.
+
+Deciding a flag is cheaper still, because Hexagon stops at the first region that sets it instead
+of collecting them all: 24 ns at 100 regions, 91 ns at 10 000, 105 ns at 50 000.
+
+Run it yourself:
+
+```bash
+./gradlew :hexagon-benchmark:jmh
+```
+
+Results land in `benchmark/build/results/jmh/results.txt`. The numbers above come from that file;
+region counts, world size and iteration counts live in
+[`RegionLookupBenchmark`](benchmark/src/jmh/java/io/github/pawelusze/hexagon/region/RegionLookupBenchmark.java)
+and [`benchmark/build.gradle.kts`](benchmark/build.gradle.kts).
+
+## API
 
 ```kotlin
 compileOnly("io.github.pawelusze:hexagon-api:1.0.0")
@@ -125,64 +139,33 @@ compileOnly("io.github.pawelusze:hexagon-api:1.0.0")
 ```java
 HexagonApi hexagon = Hexagon.api();
 
-// Ask questions
 List<Region> here = hexagon.query().at(player.getLocation());
 boolean canPvp = hexagon.query().allows(player.getLocation(), Flags.PVP, player);
 
-// Define your own flag and register it while enabling
+// Your own flag, registered while your plugin enables
 Flag<State> FLY = Flag.state("fly", FlagScope.NON_MEMBERS);
 hexagon.flags().register(FLY);
 
-// Change a region: values are immutable, so update explicitly
+// Regions are immutable, so changes are explicit
 hexagon.regions().find(RegionId.of("spawn"))
         .map(region -> region.withFlag(FLY, State.DENY))
         .ifPresent(hexagon.regions()::update);
 ```
 
 Events: `RegionCreatedEvent`, `RegionUpdatedEvent`, `RegionDeletedEvent`, and the cancellable
-`RegionEnterEvent` / `RegionLeaveEvent`.
-
-Register custom flags in `onEnable`; Hexagon loads regions after every plugin has enabled, so
-flags registered there are always known when files are read.
-
-## Opening in IntelliJ IDEA
-
-`File > Open` the project folder and pick the Gradle build when IDEA asks. Everything else is
-already configured:
-
-- **Gradle JVM**: any JDK 17+ runs the build; Gradle downloads the Java 25 toolchain it compiles
-  with, so no manual SDK setup is needed.
-- **Run configurations** (shared through `.run/`, they appear in the run widget after import):
-  `Run Paper Server`, `Build`, `Tests`, `Format (Palantir)`.
-- **Formatting**: the project ships an `.editorconfig`; run `Format (Palantir)` before committing,
-  since the build fails on unformatted code.
-
-`Run Paper Server` downloads Paper 1.21.9 on first use, installs the freshly built jar and starts
-the server in `plugin/run/`; accept the EULA there once.
+`RegionEnterEvent` and `RegionLeaveEvent`. Hexagon reads region files after every plugin has
+enabled, so flags you register in `onEnable` are known by then.
 
 ## Building
 
 ```bash
-./gradlew build
+./gradlew build            # jar in plugin/build/libs/
+./gradlew runServer        # Paper 1.21.9 with the plugin and WorldEdit
+./gradlew spotlessApply    # Palantir format; the build fails on unformatted code
 ```
 
-The plugin jar is written to `plugin/build/libs/Hexagon-<version>.jar`. `./gradlew runServer`
-starts a Paper 1.21.9 test server with the plugin and WorldEdit installed. Code is formatted with Palantir Java
-Format; run `./gradlew spotlessApply` before committing.
-
-## Project layout
-
-```
-api/     io.github.pawelusze.hexagon.api        public API (Javadoc lives here)
-plugin/  io.github.pawelusze.hexagon            runtime, packaged by feature:
-           command/             one class per command family, argument/ for the resolvers
-           config/              Configurate-backed config.yml and messages.yml
-           membership/          LuckPerms integration with a permission-node fallback
-           protection/          event listeners enforcing flags
-           region/              store, spatial index, resolver and YAML repository
-           selection/           WorldEdit and FastAsyncWorldEdit selections
-           text/                MiniMessage/legacy rendering
-```
+Open the folder in IntelliJ IDEA and pick the Gradle build; the run configurations in `.run/`
+show up in the run widget. Gradle downloads the Java 25 toolchain itself.
 
 ## License
 
