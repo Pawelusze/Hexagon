@@ -15,6 +15,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import net.kyori.adventure.key.Key;
+import org.bukkit.World;
 import org.bukkit.event.Event;
 import org.bukkit.plugin.PluginManager;
 import org.jetbrains.annotations.NotNull;
@@ -95,6 +96,16 @@ public final class DefaultRegionService implements RegionService {
 
     @Nullable
     Region firstCovering(@NotNull Key world, int x, int y, int z, @NotNull Predicate<Region> accepts) {
+        return this.state.index.firstCovering(world, x, y, z, accepts);
+    }
+
+    @NotNull
+    List<Region> at(@NotNull World world, int x, int y, int z) {
+        return this.state.index.at(world, x, y, z);
+    }
+
+    @Nullable
+    Region firstCovering(@NotNull World world, int x, int y, int z, @NotNull Predicate<Region> accepts) {
         return this.state.index.firstCovering(world, x, y, z, accepts);
     }
 

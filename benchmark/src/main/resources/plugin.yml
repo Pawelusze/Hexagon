@@ -1,0 +1,11 @@
+name: HexagonBenchmark
+version: '1.0.0'
+main: io.github.pawelusze.hexagon.benchmark.BenchmarkPlugin
+api-version: '1.21'
+description: Times Hexagon against WorldGuard on this very server.
+depend: [Hexagon, WorldGuard]
+commands:
+  hexbench:
+    description: Fill a world with regions and time both plugins answering the same questions.
+    usage: /hexbench [regions] [queries]
+    permission: hexagon.benchmark

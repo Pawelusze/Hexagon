@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import net.kyori.adventure.key.Key;
+import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -29,6 +30,11 @@ public final class DefaultRegionQuery implements RegionQuery {
 
     @Override
     public @NotNull List<Region> at(@NotNull Key world, int x, int y, int z) {
+        return this.regions.at(world, x, y, z);
+    }
+
+    @Override
+    public @NotNull List<Region> at(@NotNull World world, int x, int y, int z) {
         return this.regions.at(world, x, y, z);
     }
 
@@ -63,6 +69,24 @@ public final class DefaultRegionQuery implements RegionQuery {
     public <T> @NotNull Optional<T> resolve(
             @NotNull Key world, int x, int y, int z, @NotNull Flag<T> flag, @NotNull Player subject) {
         Region defining = this.definingRegion(world, x, y, z, flag);
+        if (defining == null || this.isExempt(subject, defining, flag)) {
+            return Optional.empty();
+        }
+        return defining.flag(flag);
+    }
+
+    @Override
+    public <T> @NotNull Optional<T> resolve(@NotNull World world, int x, int y, int z, @NotNull Flag<T> flag) {
+        Region defining = this.regions.firstCovering(
+                world, x, y, z, region -> region.flags().contains(flag));
+        return defining == null ? Optional.empty() : defining.flag(flag);
+    }
+
+    @Override
+    public <T> @NotNull Optional<T> resolve(
+            @NotNull World world, int x, int y, int z, @NotNull Flag<T> flag, @NotNull Player subject) {
+        Region defining = this.regions.firstCovering(
+                world, x, y, z, region -> region.flags().contains(flag));
         if (defining == null || this.isExempt(subject, defining, flag)) {
             return Optional.empty();
         }

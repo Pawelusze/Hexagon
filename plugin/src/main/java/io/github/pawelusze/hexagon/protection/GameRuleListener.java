@@ -287,14 +287,13 @@ public final class GameRuleListener implements Listener {
 
     /** The value the region gives a rule at a block, or empty when no region there sets it. */
     private Optional<Boolean> valueOf(Block block, GameRule<Boolean> rule) {
-        return this.query.resolve(
-                block.getWorld().key(), block.getX(), block.getY(), block.getZ(), GameRuleFlags.of(rule));
+        return this.query.resolve(block.getWorld(), block.getX(), block.getY(), block.getZ(), GameRuleFlags.of(rule));
     }
 
     /** The same, at the block an entity stands in; entities carry their coordinates, no Location is built. */
     private Optional<Boolean> valueOf(Entity entity, GameRule<Boolean> rule) {
         return this.query.resolve(
-                entity.getWorld().key(),
+                entity.getWorld(),
                 Location.locToBlock(entity.getX()),
                 Location.locToBlock(entity.getY()),
                 Location.locToBlock(entity.getZ()),

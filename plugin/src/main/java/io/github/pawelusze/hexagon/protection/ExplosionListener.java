@@ -3,7 +3,7 @@ package io.github.pawelusze.hexagon.protection;
 import io.github.pawelusze.hexagon.api.flag.Flags;
 import io.github.pawelusze.hexagon.api.region.RegionQuery;
 import java.util.List;
-import net.kyori.adventure.key.Key;
+import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -36,7 +36,7 @@ public final class ExplosionListener implements Listener {
             return;
         }
 
-        Key world = blocks.getFirst().getWorld().key();
+        World world = blocks.getFirst().getWorld();
         blocks.removeIf(block -> !this.query.allows(world, block.getX(), block.getY(), block.getZ(), Flags.EXPLOSIONS));
     }
 }

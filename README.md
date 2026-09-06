@@ -74,23 +74,30 @@ the ones that can be scoped to a cuboid; the command explains why the others can
 ## ⚡ Performance
 
 Every block a player breaks, places, walks over or hits asks one question: which regions cover it?
-[`benchmark/`](benchmark) puts that question to Hexagon and to both of WorldGuard's indexes, same
-regions, same blocks, one JVM. Apple M2, JDK 25, WorldGuard 7.0.14, 2 forks × 5 × 2 s:
+[`benchmark/`](benchmark) is a plugin that asks Hexagon and WorldGuard that question **on the same
+running Paper server**, with the same regions and the same blocks, and checks that both give the
+same answer. Regions are spread so that a block sits in about two of them; queries land in loaded
+chunks, where events happen and where WorldGuard has warmed its chunk cache, as in play.
 
-| Regions | Hexagon | WorldGuard, chunk cache | WorldGuard, R-tree |
-| --- | --- | --- | --- |
-| 100 | **15 ns** | 30 ns | 129 ns |
-| 10 000 | **20 ns** | 27 ns | 1 218 ns |
-| 50 000 | **47 ns** | 58 ns | 2 365 ns |
+Paper 1.21.9, Apple M2, JDK 25, WorldGuard 7.0.14, 100 000 queries per round, median of 5:
 
-Hexagon keeps its chunks in a table with primitive `long` keys and answers without locks, a cache
-or a background thread. WorldGuard's R-tree is what answers any chunk it has not cached yet; its
-chunk cache, once warm, comes within a few nanoseconds. Deciding a single flag is cheaper still,
-because the walk stops at the first region that sets it: 9 ns at 100 regions, 16 ns at 10 000,
-29 ns at 50 000.
+| Regions | Regions at a block | | PvP flag at a block | | Creating the regions | |
+| --- | --- | --- | --- | --- | --- | --- |
+| | **Hexagon** | WorldGuard | **Hexagon** | WorldGuard | **Hexagon** | WorldGuard |
+| 100 | **67 ns** | 340 ns | **56 ns** | 666 ns | **14 ms** | 55 ms |
+| 1 000 | **79 ns** | 331 ns | **56 ns** | 502 ns | **52 ms** | 1 045 ms |
+| 10 000 | **78 ns** | 512 ns | **63 ns** | 412 ns | **191 ms** | 67 288 ms |
+
+Hexagon keeps its chunks in a table with primitive `long` keys, reads it without locks, resolves a
+world by id instead of asking Bukkit for its key (which allocates), and stops at the first region
+that sets the flag. Creating a region through the API costs it a table insert; WorldGuard rebuilds
+its cache for every loaded chunk the region touches.
+
+Run it yourself — the server starts with both plugins, then type in its console:
 
 ```bash
-./gradlew :hexagon-benchmark:jmh
+./gradlew :hexagon-benchmark:runServer
+hexbench 10000 100000
 ```
 
 ## 🔌 API

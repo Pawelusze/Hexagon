@@ -6,8 +6,8 @@ import io.github.pawelusze.hexagon.api.flag.State;
 import io.github.pawelusze.hexagon.api.region.Region;
 import io.github.pawelusze.hexagon.api.region.RegionQuery;
 import java.util.Optional;
-import net.kyori.adventure.key.Key;
 import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
@@ -33,28 +33,27 @@ public final class AccessControl {
     }
 
     public boolean denies(@NotNull Player player, @NotNull Block block, @NotNull Flag<State> flag) {
-        return this.denies(player, block.getWorld().key(), block.getX(), block.getY(), block.getZ(), flag);
+        return this.denies(player, block.getWorld(), block.getX(), block.getY(), block.getZ(), flag);
     }
 
     public <E> boolean denies(
             @NotNull Player player, @NotNull Block block, @NotNull Flag<AccessRule<E>> flag, @NotNull E element) {
-        return this.denies(player, block.getWorld().key(), block.getX(), block.getY(), block.getZ(), flag, element);
+        return this.denies(player, block.getWorld(), block.getX(), block.getY(), block.getZ(), flag, element);
     }
 
     /** Whether the flag stops the player at the block the entity is standing in. */
     public boolean denies(@NotNull Player player, @NotNull Entity at, @NotNull Flag<State> flag) {
-        return this.denies(
-                player, at.getWorld().key(), blockOf(at.getX()), blockOf(at.getY()), blockOf(at.getZ()), flag);
+        return this.denies(player, at.getWorld(), blockOf(at.getX()), blockOf(at.getY()), blockOf(at.getZ()), flag);
     }
 
     public <E> boolean denies(
             @NotNull Player player, @NotNull Entity at, @NotNull Flag<AccessRule<E>> flag, @NotNull E element) {
-        Key world = at.getWorld().key();
+        World world = at.getWorld();
         return this.denies(player, world, blockOf(at.getX()), blockOf(at.getY()), blockOf(at.getZ()), flag, element);
     }
 
     public boolean denies(@NotNull Player player, @NotNull Location location, @NotNull Flag<State> flag) {
-        Key world = location.getWorld().key();
+        World world = location.getWorld();
         return this.denies(player, world, location.getBlockX(), location.getBlockY(), location.getBlockZ(), flag);
     }
 
@@ -69,12 +68,12 @@ public final class AccessControl {
         return !exempt && obeysFlags(player);
     }
 
-    private boolean denies(Player player, Key world, int x, int y, int z, Flag<State> flag) {
+    private boolean denies(Player player, World world, int x, int y, int z, Flag<State> flag) {
         Optional<State> state = this.query.resolve(world, x, y, z, flag, player);
         return state.isPresent() && !state.get().isAllowed() && obeysFlags(player);
     }
 
-    private <E> boolean denies(Player player, Key world, int x, int y, int z, Flag<AccessRule<E>> flag, E element) {
+    private <E> boolean denies(Player player, World world, int x, int y, int z, Flag<AccessRule<E>> flag, E element) {
         Optional<AccessRule<E>> rule = this.query.resolve(world, x, y, z, flag, player);
         return rule.isPresent() && !rule.get().allows(element) && obeysFlags(player);
     }
