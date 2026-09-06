@@ -79,8 +79,6 @@ running Paper server**, with the same regions and the same blocks, and checks th
 same answer. Regions are spread so that a block sits in about two of them; queries land in loaded
 chunks, where events happen and where WorldGuard has warmed its chunk cache, as in play.
 
-Paper 1.21.9, Apple M2, JDK 25, WorldGuard 7.0.14, 100 000 queries per round, median of 5:
-
 | Question | Regions | Hexagon | WorldGuard |
 | --- | --- | --- | --- |
 | Which regions cover this block? | 100 | **67 ns** | 340 ns |
