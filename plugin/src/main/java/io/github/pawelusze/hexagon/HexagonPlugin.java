@@ -24,7 +24,7 @@ import io.github.pawelusze.hexagon.command.argument.TrusteeArgument;
 import io.github.pawelusze.hexagon.configuration.HexagonConfiguration;
 import io.github.pawelusze.hexagon.flag.DefaultFlagRegistry;
 import io.github.pawelusze.hexagon.membership.GroupMembership;
-import io.github.pawelusze.hexagon.protection.AccessService;
+import io.github.pawelusze.hexagon.protection.AccessControl;
 import io.github.pawelusze.hexagon.protection.BlockListener;
 import io.github.pawelusze.hexagon.protection.CombatListener;
 import io.github.pawelusze.hexagon.protection.ExplosionListener;
@@ -32,12 +32,14 @@ import io.github.pawelusze.hexagon.protection.GameRuleListener;
 import io.github.pawelusze.hexagon.protection.InteractionListener;
 import io.github.pawelusze.hexagon.protection.MovementListener;
 import io.github.pawelusze.hexagon.protection.PlayerAbilityListener;
+import io.github.pawelusze.hexagon.region.DefaultRegionQuery;
 import io.github.pawelusze.hexagon.region.DefaultRegionService;
-import io.github.pawelusze.hexagon.region.RegionResolver;
 import io.github.pawelusze.hexagon.region.YamlRegionRepository;
 import io.github.pawelusze.hexagon.selection.WorldEditSelection;
 import io.github.pawelusze.hexagon.text.Messenger;
+import java.util.List;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.JoinConfiguration;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.bukkit.GameRule;
 import org.bukkit.command.CommandSender;
@@ -96,7 +98,7 @@ public final class HexagonPlugin extends JavaPlugin implements Listener {
                 new DefaultRegionService(repository, getServer().getPluginManager(), configuration::regionDefaults);
         this.regions = regions;
 
-        RegionResolver query = new RegionResolver(regions, groups);
+        DefaultRegionQuery query = new DefaultRegionQuery(regions, groups);
         HexagonApi api = new DefaultHexagonApi(regions, query, this.flags);
 
         this.registerListeners(query, configuration);
@@ -122,8 +124,8 @@ public final class HexagonPlugin extends JavaPlugin implements Listener {
         }
     }
 
-    private void registerListeners(RegionResolver query, HexagonConfiguration configuration) {
-        AccessService access = new AccessService(query);
+    private void registerListeners(DefaultRegionQuery query, HexagonConfiguration configuration) {
+        AccessControl access = new AccessControl(query);
         PluginManager events = getServer().getPluginManager();
 
         events.registerEvents(this, this);
@@ -170,15 +172,10 @@ public final class HexagonPlugin extends JavaPlugin implements Listener {
     /** LiteCommands hands over one usage line per shape the command accepts. */
     private Component usageMessage(HexagonConfiguration configuration, InvalidUsage<?> usage) {
         String template = configuration.messages().invalidUsage;
-        Component lines = Component.empty();
-
-        for (String schematic : usage.getSchematic().all()) {
-            if (!lines.equals(Component.empty())) {
-                lines = lines.append(Component.newline());
-            }
-            lines = lines.append(this.messenger.message(template, Placeholder.unparsed("usage", schematic)));
-        }
-        return lines;
+        List<Component> lines = usage.getSchematic().all().stream()
+                .map(schematic -> this.messenger.message(template, Placeholder.unparsed("usage", schematic)))
+                .toList();
+        return Component.join(JoinConfiguration.newlines(), lines);
     }
 
     /** Generic types such as {@code Flag<?>} cannot be written as a {@code Class}, hence the raw call. */

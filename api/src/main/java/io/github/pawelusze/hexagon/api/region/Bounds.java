@@ -43,7 +43,12 @@ public record Bounds(@NotNull BlockPoint min, @NotNull BlockPoint max) {
      * @return true if the position is inside, borders included
      */
     public boolean contains(int x, int y, int z) {
-        return x >= min.x() && x <= max.x() && y >= min.y() && y <= max.y() && z >= min.z() && z <= max.z();
+        return x >= this.min.x()
+                && x <= this.max.x()
+                && y >= this.min.y()
+                && y <= this.max.y()
+                && z >= this.min.z()
+                && z <= this.max.z();
     }
 
     /**
@@ -71,7 +76,7 @@ public record Bounds(@NotNull BlockPoint min, @NotNull BlockPoint max) {
      * @return the width
      */
     public int sizeX() {
-        return max.x() - min.x() + 1;
+        return this.max.x() - this.min.x() + 1;
     }
 
     /**
@@ -80,7 +85,7 @@ public record Bounds(@NotNull BlockPoint min, @NotNull BlockPoint max) {
      * @return the height
      */
     public int sizeY() {
-        return max.y() - min.y() + 1;
+        return this.max.y() - this.min.y() + 1;
     }
 
     /**
@@ -89,7 +94,7 @@ public record Bounds(@NotNull BlockPoint min, @NotNull BlockPoint max) {
      * @return the depth
      */
     public int sizeZ() {
-        return max.z() - min.z() + 1;
+        return this.max.z() - this.min.z() + 1;
     }
 
     /**
@@ -99,8 +104,8 @@ public record Bounds(@NotNull BlockPoint min, @NotNull BlockPoint max) {
      */
     public @NotNull BlockPoint center() {
         return new BlockPoint(
-                Math.floorDiv(min.x() + max.x(), 2),
-                Math.floorDiv(min.y() + max.y(), 2),
-                Math.floorDiv(min.z() + max.z(), 2));
+                Math.floorDiv(this.min.x() + this.max.x(), 2),
+                Math.floorDiv(this.min.y() + this.max.y(), 2),
+                Math.floorDiv(this.min.z() + this.max.z(), 2));
     }
 }

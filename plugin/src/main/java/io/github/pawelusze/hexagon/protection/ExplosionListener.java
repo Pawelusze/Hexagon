@@ -3,6 +3,7 @@ package io.github.pawelusze.hexagon.protection;
 import io.github.pawelusze.hexagon.api.flag.Flags;
 import io.github.pawelusze.hexagon.api.region.RegionQuery;
 import java.util.List;
+import net.kyori.adventure.key.Key;
 import org.bukkit.block.Block;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -29,7 +30,13 @@ public final class ExplosionListener implements Listener {
         this.protectBlocks(event.blockList());
     }
 
+    /** One explosion lists hundreds of blocks; the world key is read once rather than per block. */
     private void protectBlocks(List<Block> blocks) {
-        blocks.removeIf(block -> !this.query.allows(block.getLocation(), Flags.EXPLOSIONS));
+        if (blocks.isEmpty()) {
+            return;
+        }
+
+        Key world = blocks.getFirst().getWorld().key();
+        blocks.removeIf(block -> !this.query.allows(world, block.getX(), block.getY(), block.getZ(), Flags.EXPLOSIONS));
     }
 }

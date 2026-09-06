@@ -8,7 +8,7 @@ import dev.rollczi.litecommands.suggestion.SuggestionContext;
 import dev.rollczi.litecommands.suggestion.SuggestionResult;
 import io.github.pawelusze.hexagon.api.region.Trustee;
 import io.github.pawelusze.hexagon.command.CommandPlaceholders;
-import io.github.pawelusze.hexagon.configuration.MessagesConfig;
+import io.github.pawelusze.hexagon.configuration.MessagesConfiguration;
 import io.github.pawelusze.hexagon.membership.GroupMembership;
 import io.github.pawelusze.hexagon.text.Messenger;
 import java.util.Collection;
@@ -32,10 +32,10 @@ public final class TrusteeArgument extends ArgumentResolver<CommandSender, Trust
     private final Server server;
     private final GroupMembership groups;
     private final Messenger messenger;
-    private final Supplier<MessagesConfig> messages;
+    private final Supplier<MessagesConfiguration> messages;
 
     public TrusteeArgument(
-            Server server, GroupMembership groups, Messenger messenger, Supplier<MessagesConfig> messages) {
+            Server server, GroupMembership groups, Messenger messenger, Supplier<MessagesConfiguration> messages) {
         this.server = server;
         this.groups = groups;
         this.messenger = messenger;
@@ -45,39 +45,43 @@ public final class TrusteeArgument extends ArgumentResolver<CommandSender, Trust
     @Override
     protected @NotNull ParseResult<Trustee> parse(
             @NotNull Invocation<CommandSender> invocation, @NotNull Argument<Trustee> context, @NotNull String input) {
-        if (input.regionMatches(
-                true, 0, CommandPlaceholders.GROUP_PREFIX, 0, CommandPlaceholders.GROUP_PREFIX.length())) {
+        if (namesGroup(input)) {
             return this.parseGroup(input.substring(CommandPlaceholders.GROUP_PREFIX.length()));
         }
         return this.parsePlayer(input);
     }
 
+    private static boolean namesGroup(String input) {
+        String prefix = CommandPlaceholders.GROUP_PREFIX;
+        return input.regionMatches(true, 0, prefix, 0, prefix.length());
+    }
+
     private ParseResult<Trustee> parseGroup(String name) {
-        Collection<String> known = groups.knownGroups();
+        Collection<String> known = this.groups.knownGroups();
         if (name.isBlank() || (!known.isEmpty() && !known.contains(name.toLowerCase(Locale.ROOT)))) {
-            return this.failure(messages.get().trust.unknownGroup, name);
+            return this.failure(this.messages.get().trust.unknownGroup, name);
         }
         return ParseResult.success(Trustee.group(name));
     }
 
     private ParseResult<Trustee> parsePlayer(String input) {
-        Player online = server.getPlayerExact(input);
+        Player online = this.server.getPlayerExact(input);
         if (online != null) {
             return ParseResult.success(Trustee.player(online.getUniqueId()));
         }
-        OfflinePlayer cached = server.getOfflinePlayerIfCached(input);
+        OfflinePlayer cached = this.server.getOfflinePlayerIfCached(input);
         if (cached != null) {
             return ParseResult.success(Trustee.player(cached.getUniqueId()));
         }
         try {
             return ParseResult.success(Trustee.player(UUID.fromString(input)));
         } catch (IllegalArgumentException _) {
-            return this.failure(messages.get().trust.unknownPlayer, input);
+            return this.failure(this.messages.get().trust.unknownPlayer, input);
         }
     }
 
     private ParseResult<Trustee> failure(String template, String input) {
-        return ParseResult.failure(messenger.message(template, Placeholder.unparsed("input", input)));
+        return ParseResult.failure(this.messenger.message(template, Placeholder.unparsed("input", input)));
     }
 
     @Override
@@ -85,8 +89,9 @@ public final class TrusteeArgument extends ArgumentResolver<CommandSender, Trust
             @NotNull Invocation<CommandSender> invocation,
             @NotNull Argument<Trustee> argument,
             @NotNull SuggestionContext context) {
-        Stream<String> players = server.getOnlinePlayers().stream().map(Player::getName);
-        Stream<String> groupNames = groups.knownGroups().stream().map(name -> CommandPlaceholders.GROUP_PREFIX + name);
+        Stream<String> players = this.server.getOnlinePlayers().stream().map(Player::getName);
+        Stream<String> groupNames =
+                this.groups.knownGroups().stream().map(name -> CommandPlaceholders.GROUP_PREFIX + name);
         return Stream.concat(players, groupNames).collect(SuggestionResult.collector());
     }
 }

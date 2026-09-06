@@ -154,8 +154,9 @@ public final class FlagTypes {
             }
             Set<E> targets = new LinkedHashSet<>();
             for (String name : names) {
-                targets.add(
-                        parser.apply(name).orElseThrow(() -> new FlagValueException("Unknown target '" + name + "'")));
+                targets.add(this.parser
+                        .apply(name)
+                        .orElseThrow(() -> new FlagValueException("Unknown target '" + name + "'")));
             }
             return targets;
         }

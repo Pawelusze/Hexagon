@@ -29,7 +29,7 @@ public record BlockPoint(int x, int y, int z) {
      * @return a point with the smaller coordinate on every axis
      */
     public @NotNull BlockPoint min(@NotNull BlockPoint other) {
-        return new BlockPoint(Math.min(x, other.x), Math.min(y, other.y), Math.min(z, other.z));
+        return new BlockPoint(Math.min(this.x, other.x), Math.min(this.y, other.y), Math.min(this.z, other.z));
     }
 
     /**
@@ -39,11 +39,11 @@ public record BlockPoint(int x, int y, int z) {
      * @return a point with the larger coordinate on every axis
      */
     public @NotNull BlockPoint max(@NotNull BlockPoint other) {
-        return new BlockPoint(Math.max(x, other.x), Math.max(y, other.y), Math.max(z, other.z));
+        return new BlockPoint(Math.max(this.x, other.x), Math.max(this.y, other.y), Math.max(this.z, other.z));
     }
 
     @Override
     public @NotNull String toString() {
-        return x + ", " + y + ", " + z;
+        return this.x + ", " + this.y + ", " + this.z;
     }
 }

@@ -15,7 +15,7 @@ import org.spongepowered.configurate.objectmapping.ConfigSerializable;
  */
 @ConfigSerializable
 @SuppressWarnings({"FieldMayBeFinal", "FieldCanBeLocal"}) // Configurate assigns the fields by reflection.
-public final class MessagesConfig {
+public final class MessagesConfiguration {
 
     public static final String HEADER = """
             Hexagon messages. MiniMessage is the primary format; legacy '&' colour codes also work.

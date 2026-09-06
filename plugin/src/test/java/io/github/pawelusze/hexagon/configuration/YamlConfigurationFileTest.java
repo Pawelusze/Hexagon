@@ -8,7 +8,7 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-class YamlConfigFileTest {
+class YamlConfigurationFileTest {
 
     @TempDir
     Path directory;
@@ -17,7 +17,8 @@ class YamlConfigFileTest {
     void writesDefaultsWithHeaderOnFirstLoad() throws Exception {
         Path file = directory.resolve("config.yml");
 
-        PluginConfig config = new YamlConfigFile<>(PluginConfig.class, file, PluginConfig.HEADER).load();
+        PluginConfiguration config =
+                new YamlConfigurationFile<>(PluginConfiguration.class, file, PluginConfiguration.HEADER).load();
 
         assertThat(config.defaultPriority).isZero();
         assertThat(config.defaultFlags).containsEntry("block-break", "deny");
@@ -31,7 +32,8 @@ class YamlConfigFileTest {
         Path file = directory.resolve("config.yml");
         Files.writeString(file, "default-priority: 5\ndefault-flags:\n  pvp: deny\n");
 
-        PluginConfig config = new YamlConfigFile<>(PluginConfig.class, file, PluginConfig.HEADER).load();
+        PluginConfiguration config =
+                new YamlConfigurationFile<>(PluginConfiguration.class, file, PluginConfiguration.HEADER).load();
 
         assertThat(config.defaultPriority).isEqualTo(5);
         assertThat(config.defaultFlags).containsExactlyEntriesOf(Map.of("pvp", "deny"));

@@ -15,7 +15,7 @@ import org.spongepowered.configurate.yaml.YamlConfigurationLoader;
  *
  * @param <T> the configuration type
  */
-public final class YamlConfigFile<T> {
+public final class YamlConfigurationFile<T> {
 
     private static final ObjectMapper.Factory MAPPER = ObjectMapper.factoryBuilder()
             .defaultNamingScheme(NamingSchemes.LOWER_CASE_DASHED)
@@ -24,7 +24,7 @@ public final class YamlConfigFile<T> {
     private final Class<T> type;
     private final YamlConfigurationLoader loader;
 
-    public YamlConfigFile(@NotNull Class<T> type, @NotNull Path path, @NotNull String header) {
+    public YamlConfigurationFile(@NotNull Class<T> type, @NotNull Path path, @NotNull String header) {
         this.type = type;
         this.loader = YamlConfigurationLoader.builder()
                 .path(path)
@@ -37,12 +37,12 @@ public final class YamlConfigFile<T> {
     }
 
     public @NotNull T load() throws ConfigurateException {
-        CommentedConfigurationNode node = loader.load();
-        T value = node.get(type);
+        CommentedConfigurationNode node = this.loader.load();
+        T value = node.get(this.type);
         if (value == null) {
-            throw new ConfigurateException("Could not map " + type.getSimpleName());
+            throw new ConfigurateException("Could not map " + this.type.getSimpleName());
         }
-        node.set(type, value);
+        node.set(this.type, value);
         this.loader.save(node);
         return value;
     }

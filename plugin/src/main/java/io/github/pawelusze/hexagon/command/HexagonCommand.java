@@ -36,8 +36,8 @@ import io.github.pawelusze.hexagon.api.region.RegionService;
 import io.github.pawelusze.hexagon.api.region.Role;
 import io.github.pawelusze.hexagon.api.region.Trustee;
 import io.github.pawelusze.hexagon.command.argument.FlagValue;
-import io.github.pawelusze.hexagon.configuration.MessagesConfig;
-import io.github.pawelusze.hexagon.configuration.PluginConfig;
+import io.github.pawelusze.hexagon.configuration.MessagesConfiguration;
+import io.github.pawelusze.hexagon.configuration.PluginConfiguration;
 import io.github.pawelusze.hexagon.selection.WorldEditSelection;
 import io.github.pawelusze.hexagon.text.Messenger;
 import java.util.Collection;
@@ -81,16 +81,16 @@ public final class HexagonCommand {
     private final RegionQuery query;
     private final FlagRegistry flags;
     private final Messenger messenger;
-    private final Supplier<PluginConfig> config;
-    private final Supplier<MessagesConfig> messages;
+    private final Supplier<PluginConfiguration> config;
+    private final Supplier<MessagesConfiguration> messages;
     private final Consumer<Runnable> reload;
 
     public HexagonCommand(
             @NotNull Server server,
             @NotNull HexagonApi hexagon,
             @NotNull Messenger messenger,
-            @NotNull Supplier<PluginConfig> config,
-            @NotNull Supplier<MessagesConfig> messages,
+            @NotNull Supplier<PluginConfiguration> config,
+            @NotNull Supplier<MessagesConfiguration> messages,
             @NotNull Consumer<Runnable> reload) {
         this.server = server;
         this.regions = hexagon.regions();
@@ -124,7 +124,7 @@ public final class HexagonCommand {
             return;
         }
 
-        MessagesConfig.RegionMessages texts = this.messages.get().region;
+        MessagesConfiguration.RegionMessages texts = this.messages.get().region;
         Bounds bounds = target.bounds();
         this.messenger.send(sender, texts.infoHeader, region(target));
         this.messenger.send(sender, texts.infoWorld, world(target.world().asString()));
@@ -451,7 +451,7 @@ public final class HexagonCommand {
     }
 
     private void sendPage(CommandSender sender, String worldName, Collection<Region> found, @Nullable Integer page) {
-        MessagesConfig.RegionMessages texts = this.messages.get().region;
+        MessagesConfiguration.RegionMessages texts = this.messages.get().region;
         if (found.isEmpty()) {
             this.messenger.send(sender, texts.listEmpty);
             return;

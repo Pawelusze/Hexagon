@@ -82,7 +82,7 @@ public record AccessRule<E>(@NotNull State state, @NotNull Set<E> targets) {
      * @return true if no targets are listed
      */
     public boolean isUniversal() {
-        return targets.isEmpty();
+        return this.targets.isEmpty();
     }
 
     /**
@@ -92,7 +92,7 @@ public record AccessRule<E>(@NotNull State state, @NotNull Set<E> targets) {
      * @return true if the element is allowed
      */
     public boolean allows(@NotNull E element) {
-        boolean targeted = this.isUniversal() || targets.contains(element);
-        return targeted == state.isAllowed();
+        boolean targeted = this.isUniversal() || this.targets.contains(element);
+        return targeted == this.state.isAllowed();
     }
 }

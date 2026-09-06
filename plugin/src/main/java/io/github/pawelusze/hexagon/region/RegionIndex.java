@@ -3,13 +3,13 @@ package io.github.pawelusze.hexagon.region;
 import io.github.pawelusze.hexagon.api.region.Bounds;
 import io.github.pawelusze.hexagon.api.region.Region;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.LongConsumer;
 import java.util.function.Predicate;
 import net.kyori.adventure.key.Key;
 import org.jetbrains.annotations.NotNull;
@@ -18,7 +18,11 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Spatial index of regions, bucketed per world and chunk. Regions spanning more than {@value
  * #LARGE_REGION_CHUNKS} chunks are kept in a separate per-world list instead of being registered
- * in every chunk they cover. Reads are lock-free; writes replace immutable bucket lists.
+ * in every chunk they cover.
+ *
+ * <p>Lookups never lock. A write copies the world's table, changes the copy and publishes it, which
+ * costs a few milliseconds on a server with tens of thousands of regions and happens only when a
+ * command changes one. {@link #addAll} exists so that loading does not pay that copy per region.
  *
  * <p>Every bucket stays sorted by priority, because regions change rarely and are looked up on
  * every block a player walks over. A lookup then merges two sorted lists instead of sorting the
@@ -38,7 +42,15 @@ final class RegionIndex {
     private final Map<Key, WorldIndex> worlds = new ConcurrentHashMap<>();
 
     void add(@NotNull Region region) {
-        this.worlds.computeIfAbsent(region.world(), _ -> new WorldIndex()).add(region);
+        this.worldOf(region).add(region);
+    }
+
+    void addAll(@NotNull Collection<Region> regions) {
+        Map<Key, List<Region>> byWorld = new HashMap<>();
+        for (Region region : regions) {
+            byWorld.computeIfAbsent(region.world(), _ -> new ArrayList<>()).add(region);
+        }
+        byWorld.forEach((world, inWorld) -> this.worldOf(world).addAll(inWorld));
     }
 
     void remove(@NotNull Region region) {
@@ -48,17 +60,10 @@ final class RegionIndex {
         }
     }
 
-    void clear() {
-        this.worlds.clear();
-    }
-
     @NotNull
     List<Region> at(@NotNull Key world, int x, int y, int z) {
         WorldIndex index = this.worlds.get(world);
-        if (index == null) {
-            return List.of();
-        }
-        return index.at(x, y, z);
+        return index == null ? List.of() : index.at(x, y, z);
     }
 
     /**
@@ -68,36 +73,72 @@ final class RegionIndex {
     @Nullable
     Region firstCovering(@NotNull Key world, int x, int y, int z, @NotNull Predicate<Region> accepts) {
         WorldIndex index = this.worlds.get(world);
-        if (index == null) {
-            return null;
-        }
-        return index.walkCovering(x, y, z, accepts);
+        return index == null ? null : index.walkCovering(x, y, z, accepts);
+    }
+
+    private WorldIndex worldOf(Region region) {
+        return this.worldOf(region.world());
+    }
+
+    private WorldIndex worldOf(Key world) {
+        return this.worlds.computeIfAbsent(world, _ -> new WorldIndex());
     }
 
     private static final class WorldIndex {
 
-        private final Map<Long, List<Region>> chunks = new ConcurrentHashMap<>();
-        private final AtomicReference<List<Region>> large = new AtomicReference<>(List.of());
+        private volatile ChunkTable chunks = new ChunkTable();
+        private volatile List<Region> large = List.of();
 
-        void add(@NotNull Region region) {
+        synchronized void add(Region region) {
             if (isLarge(region.bounds())) {
-                large.updateAndGet(current -> appended(current, region));
+                this.large = sorted(this.large, region);
                 return;
             }
-            forEachChunk(region.bounds(), key -> this.chunks.merge(key, List.of(region), RegionIndex::concat));
+
+            ChunkTable copy = this.chunks.copy();
+            insert(copy, region);
+            this.chunks = copy;
         }
 
-        void remove(@NotNull Region region) {
+        synchronized void addAll(List<Region> regions) {
+            ChunkTable copy = this.chunks.copy();
+            List<Region> huge = new ArrayList<>(this.large);
+            for (Region region : regions) {
+                if (isLarge(region.bounds())) {
+                    huge.add(region);
+                } else {
+                    insert(copy, region);
+                }
+            }
+            huge.sort(HIGHEST_PRIORITY_FIRST);
+            this.large = List.copyOf(huge);
+            this.chunks = copy;
+        }
+
+        synchronized void remove(Region region) {
             if (isLarge(region.bounds())) {
-                large.updateAndGet(current -> without(current, region));
+                this.large = without(this.large, region);
                 return;
             }
-            forEachChunk(
-                    region.bounds(),
-                    key -> chunks.computeIfPresent(key, (_, bucket) -> {
-                        List<Region> remaining = without(bucket, region);
-                        return remaining.isEmpty() ? null : remaining;
-                    }));
+
+            ChunkTable copy = this.chunks.copy();
+            Bounds bounds = region.bounds();
+            for (int chunkX = bounds.min().x() >> 4; chunkX <= bounds.max().x() >> 4; chunkX++) {
+                for (int chunkZ = bounds.min().z() >> 4; chunkZ <= bounds.max().z() >> 4; chunkZ++) {
+                    long key = ChunkTable.keyOf(chunkX, chunkZ);
+                    List<Region> bucket = copy.get(key);
+                    if (bucket == null) {
+                        continue;
+                    }
+                    List<Region> remaining = without(bucket, region);
+                    if (remaining.isEmpty()) {
+                        copy.remove(key);
+                    } else {
+                        copy.put(key, remaining);
+                    }
+                }
+            }
+            this.chunks = copy;
         }
 
         @NotNull
@@ -117,8 +158,11 @@ final class RegionIndex {
          * @return the first region {@code stopsHere} accepts, or null when it accepted none
          */
         private @Nullable Region walkCovering(int x, int y, int z, Predicate<Region> stopsHere) {
-            List<Region> bucket = this.chunks.getOrDefault(chunkKey(x >> 4, z >> 4), List.of());
-            List<Region> huge = this.large.get();
+            List<Region> bucket = this.chunks.get(ChunkTable.keyOf(x >> 4, z >> 4));
+            List<Region> huge = this.large;
+            if (bucket == null) {
+                bucket = List.of();
+            }
 
             int fromBucket = 0;
             int fromHuge = 0;
@@ -134,40 +178,36 @@ final class RegionIndex {
             return null;
         }
 
+        /** Registers a region in every chunk bucket it touches; the table must be private to the caller. */
+        private static void insert(ChunkTable table, Region region) {
+            Bounds bounds = region.bounds();
+            for (int chunkX = bounds.min().x() >> 4; chunkX <= bounds.max().x() >> 4; chunkX++) {
+                for (int chunkZ = bounds.min().z() >> 4; chunkZ <= bounds.max().z() >> 4; chunkZ++) {
+                    long key = ChunkTable.keyOf(chunkX, chunkZ);
+                    List<Region> bucket = table.get(key);
+                    table.put(key, bucket == null ? List.of(region) : sorted(bucket, region));
+                }
+            }
+        }
+
         private static boolean isLarge(Bounds bounds) {
             long chunksX = (bounds.max().x() >> 4) - (bounds.min().x() >> 4) + 1L;
             long chunksZ = (bounds.max().z() >> 4) - (bounds.min().z() >> 4) + 1L;
             return chunksX * chunksZ > LARGE_REGION_CHUNKS;
         }
-
-        private static void forEachChunk(Bounds bounds, LongConsumer action) {
-            for (int chunkX = bounds.min().x() >> 4; chunkX <= bounds.max().x() >> 4; chunkX++) {
-                for (int chunkZ = bounds.min().z() >> 4; chunkZ <= bounds.max().z() >> 4; chunkZ++) {
-                    action.accept(chunkKey(chunkX, chunkZ));
-                }
-            }
-        }
-
-        private static long chunkKey(int chunkX, int chunkZ) {
-            return ((long) chunkX << 32) | (chunkZ & 0xFFFFFFFFL);
-        }
     }
 
-    /** Joins two buckets and keeps the result in priority order, which is what lookups rely on. */
-    private static List<Region> concat(List<Region> first, List<Region> second) {
-        List<Region> merged = new ArrayList<>(first.size() + second.size());
-        merged.addAll(first);
-        merged.addAll(second);
+    /** A bucket with one more region, kept in the priority order lookups rely on. */
+    private static List<Region> sorted(List<Region> bucket, Region region) {
+        List<Region> merged = new ArrayList<>(bucket.size() + 1);
+        merged.addAll(bucket);
+        merged.add(region);
         merged.sort(HIGHEST_PRIORITY_FIRST);
         return List.copyOf(merged);
     }
 
-    private static List<Region> appended(List<Region> list, Region region) {
-        return concat(list, List.of(region));
-    }
-
-    private static List<Region> without(List<Region> list, Region region) {
-        return list.stream()
+    private static List<Region> without(List<Region> bucket, Region region) {
+        return bucket.stream()
                 .filter(candidate -> !candidate.id().equals(region.id()))
                 .toList();
     }

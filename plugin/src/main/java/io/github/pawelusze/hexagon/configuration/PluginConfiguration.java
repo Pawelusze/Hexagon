@@ -10,7 +10,7 @@ import org.spongepowered.configurate.objectmapping.ConfigSerializable;
  */
 @ConfigSerializable
 @SuppressWarnings({"FieldMayBeFinal", "FieldCanBeLocal"}) // Configurate assigns the fields by reflection.
-public final class PluginConfig {
+public final class PluginConfiguration {
 
     public static final String HEADER = """
             Hexagon configuration.

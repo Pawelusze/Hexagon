@@ -61,8 +61,8 @@ public record Region(
      * @return true if the location's world matches and the block is inside the bounds
      */
     public boolean contains(@NotNull Location location) {
-        return world.equals(location.getWorld().key())
-                && bounds.contains(location.getBlockX(), location.getBlockY(), location.getBlockZ());
+        return this.world.equals(location.getWorld().key())
+                && this.bounds.contains(location.getBlockX(), location.getBlockY(), location.getBlockZ());
     }
 
     /**
@@ -72,7 +72,7 @@ public record Region(
      * @return the role, or empty if the trustee is not trusted
      */
     public @NotNull Optional<Role> roleOf(@NotNull Trustee trustee) {
-        return Optional.ofNullable(trustees.get(trustee));
+        return Optional.ofNullable(this.trustees.get(trustee));
     }
 
     /**
@@ -83,7 +83,7 @@ public record Region(
      * @return the value, or empty if the flag is not set
      */
     public <T> @NotNull Optional<T> flag(@NotNull Flag<T> flag) {
-        return flags.get(flag);
+        return this.flags.get(flag);
     }
 
     /**
@@ -93,7 +93,7 @@ public record Region(
      * @return the copy
      */
     public @NotNull Region withBounds(@NotNull Bounds newBounds) {
-        return new Region(id, world, newBounds, priority, trustees, flags);
+        return new Region(this.id, this.world, newBounds, this.priority, this.trustees, this.flags);
     }
 
     /**
@@ -103,7 +103,7 @@ public record Region(
      * @return the copy
      */
     public @NotNull Region withPriority(int newPriority) {
-        return new Region(id, world, bounds, newPriority, trustees, flags);
+        return new Region(this.id, this.world, this.bounds, newPriority, this.trustees, this.flags);
     }
 
     /**
@@ -114,9 +114,9 @@ public record Region(
      * @return the copy
      */
     public @NotNull Region withTrustee(@NotNull Trustee trustee, @NotNull Role role) {
-        Map<Trustee, Role> updated = new HashMap<>(trustees);
+        Map<Trustee, Role> updated = new HashMap<>(this.trustees);
         updated.put(trustee, role);
-        return new Region(id, world, bounds, priority, updated, flags);
+        return new Region(this.id, this.world, this.bounds, this.priority, updated, this.flags);
     }
 
     /**
@@ -126,9 +126,9 @@ public record Region(
      * @return the copy
      */
     public @NotNull Region withoutTrustee(@NotNull Trustee trustee) {
-        Map<Trustee, Role> updated = new HashMap<>(trustees);
+        Map<Trustee, Role> updated = new HashMap<>(this.trustees);
         updated.remove(trustee);
-        return new Region(id, world, bounds, priority, updated, flags);
+        return new Region(this.id, this.world, this.bounds, this.priority, updated, this.flags);
     }
 
     /**
@@ -140,7 +140,7 @@ public record Region(
      * @return the copy
      */
     public <T> @NotNull Region withFlag(@NotNull Flag<T> flag, @NotNull T value) {
-        return new Region(id, world, bounds, priority, trustees, flags.with(flag, value));
+        return new Region(this.id, this.world, this.bounds, this.priority, this.trustees, this.flags.with(flag, value));
     }
 
     /**
@@ -150,6 +150,6 @@ public record Region(
      * @return the copy
      */
     public @NotNull Region withoutFlag(@NotNull Flag<?> flag) {
-        return new Region(id, world, bounds, priority, trustees, flags.without(flag));
+        return new Region(this.id, this.world, this.bounds, this.priority, this.trustees, this.flags.without(flag));
     }
 }

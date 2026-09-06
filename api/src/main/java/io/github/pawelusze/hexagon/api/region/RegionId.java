@@ -1,5 +1,6 @@
 package io.github.pawelusze.hexagon.api.region;
 
+import java.util.Locale;
 import java.util.regex.Pattern;
 import org.jetbrains.annotations.NotNull;
 
@@ -39,7 +40,7 @@ public record RegionId(@NotNull String value) {
      * @throws IllegalArgumentException if the input is not a valid identifier
      */
     public static @NotNull RegionId of(@NotNull String raw) {
-        return new RegionId(raw.toLowerCase(java.util.Locale.ROOT));
+        return new RegionId(raw.toLowerCase(Locale.ROOT));
     }
 
     /**
@@ -49,7 +50,7 @@ public record RegionId(@NotNull String value) {
      * @return true if {@link #of(String)} would succeed
      */
     public static boolean isValid(@NotNull String raw) {
-        return VALID.matcher(raw.toLowerCase(java.util.Locale.ROOT)).matches();
+        return VALID.matcher(raw.toLowerCase(Locale.ROOT)).matches();
     }
 
     @Override

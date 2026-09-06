@@ -70,6 +70,34 @@ public interface RegionQuery {
     Optional<Role> roleOf(@NotNull Player player, @NotNull Region region);
 
     /**
+     * Resolves a flag at a block, ignoring who asks.
+     *
+     * @param world the world key
+     * @param x the block x coordinate
+     * @param y the block y coordinate
+     * @param z the block z coordinate
+     * @param flag the flag
+     * @param <T> the flag value type
+     * @return the value, or empty if no covering region sets the flag
+     */
+    <T> @NotNull Optional<T> resolve(@NotNull Key world, int x, int y, int z, @NotNull Flag<T> flag);
+
+    /**
+     * Resolves a flag at a block for a subject, honouring the flag's scope.
+     *
+     * @param world the world key
+     * @param x the block x coordinate
+     * @param y the block y coordinate
+     * @param z the block z coordinate
+     * @param flag the flag
+     * @param subject the player the flag would apply to
+     * @param <T> the flag value type
+     * @return the value, or empty if no covering region sets the flag or the subject is exempt
+     */
+    <T> @NotNull Optional<T> resolve(
+            @NotNull Key world, int x, int y, int z, @NotNull Flag<T> flag, @NotNull Player subject);
+
+    /**
      * Resolves a flag at a location, ignoring who asks.
      *
      * @param location the location
@@ -77,7 +105,10 @@ public interface RegionQuery {
      * @param <T> the flag value type
      * @return the value, or empty if no covering region sets the flag
      */
-    <T> @NotNull Optional<T> resolve(@NotNull Location location, @NotNull Flag<T> flag);
+    default <T> @NotNull Optional<T> resolve(@NotNull Location location, @NotNull Flag<T> flag) {
+        return this.resolve(
+                location.getWorld().key(), location.getBlockX(), location.getBlockY(), location.getBlockZ(), flag);
+    }
 
     /**
      * Resolves a flag at a location for a subject, honouring the flag's scope.
@@ -88,7 +119,30 @@ public interface RegionQuery {
      * @param <T> the flag value type
      * @return the value, or empty if no covering region sets the flag or the subject is exempt
      */
-    <T> @NotNull Optional<T> resolve(@NotNull Location location, @NotNull Flag<T> flag, @NotNull Player subject);
+    default <T> @NotNull Optional<T> resolve(
+            @NotNull Location location, @NotNull Flag<T> flag, @NotNull Player subject) {
+        return this.resolve(
+                location.getWorld().key(),
+                location.getBlockX(),
+                location.getBlockY(),
+                location.getBlockZ(),
+                flag,
+                subject);
+    }
+
+    /**
+     * Tells whether a state flag allows an action at a block, ignoring who asks.
+     *
+     * @param world the world key
+     * @param x the block x coordinate
+     * @param y the block y coordinate
+     * @param z the block z coordinate
+     * @param flag the flag
+     * @return false only if the flag resolves to {@link State#DENY}
+     */
+    default boolean allows(@NotNull Key world, int x, int y, int z, @NotNull Flag<State> flag) {
+        return this.resolve(world, x, y, z, flag).orElse(State.ALLOW).isAllowed();
+    }
 
     /**
      * Tells whether a state flag allows an action at a location, ignoring who asks.

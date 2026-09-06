@@ -44,18 +44,18 @@ public final class Messenger {
     private volatile Component prefix = Component.empty();
 
     public void prefix(@NotNull String template) {
-        this.prefix = render(template);
+        this.prefix = this.render(template);
     }
 
     public @NotNull Component render(@NotNull String template, @NotNull TagResolver... placeholders) {
-        return miniMessage.deserialize(legacyToMiniMessage(template), placeholders);
+        return this.miniMessage.deserialize(legacyToMiniMessage(template), placeholders);
     }
 
     public void send(@NotNull Audience audience, @NotNull String template, @NotNull TagResolver... placeholders) {
         if (template.isBlank()) {
             return;
         }
-        audience.sendMessage(message(template, placeholders));
+        audience.sendMessage(this.message(template, placeholders));
     }
 
     /** Sends a line as written, without the prefix, for blocks of text such as the help. */
@@ -63,11 +63,11 @@ public final class Messenger {
         if (template.isBlank()) {
             return;
         }
-        audience.sendMessage(render(template));
+        audience.sendMessage(this.render(template));
     }
 
     public @NotNull Component message(@NotNull String template, @NotNull TagResolver... placeholders) {
-        return prefix.append(render(template, placeholders));
+        return this.prefix.append(this.render(template, placeholders));
     }
 
     static @NotNull String legacyToMiniMessage(@NotNull String template) {

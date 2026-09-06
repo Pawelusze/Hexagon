@@ -8,7 +8,9 @@ import org.bukkit.GameRule;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Tag;
+import org.bukkit.block.Block;
 import org.bukkit.damage.DamageType;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Monster;
 import org.bukkit.entity.Player;
@@ -74,18 +76,18 @@ public final class GameRuleListener implements Listener {
 
     @EventHandler(ignoreCancelled = true)
     public void onPlayerDeath(@NotNull PlayerDeathEvent event) {
-        Location death = event.getEntity().getLocation();
+        Player dead = event.getEntity();
 
-        this.valueOf(death, GameRule.KEEP_INVENTORY).ifPresent(keep -> keepBelongings(event, keep));
+        this.valueOf(dead, GameRule.KEEP_INVENTORY).ifPresent(keep -> keepBelongings(event, keep));
 
-        if (this.isDisabled(death, GameRule.SHOW_DEATH_MESSAGES)) {
+        if (this.isDisabled(dead, GameRule.SHOW_DEATH_MESSAGES)) {
             event.deathMessage(null);
         }
     }
 
     @EventHandler(ignoreCancelled = true)
     public void onAdvancement(@NotNull PlayerAdvancementDoneEvent event) {
-        if (this.isDisabled(event.getPlayer().getLocation(), GameRule.ANNOUNCE_ADVANCEMENTS)) {
+        if (this.isDisabled(event.getPlayer(), GameRule.ANNOUNCE_ADVANCEMENTS)) {
             event.message(null);
         }
     }
@@ -99,7 +101,7 @@ public final class GameRuleListener implements Listener {
         GameRule<Boolean> rule =
                 RULES_BY_DAMAGE_TYPE.get(event.getDamageSource().getDamageType());
         if (rule != null) {
-            this.cancelIfDisabled(event, player.getLocation(), rule);
+            this.cancelIfDisabled(event, player, rule);
         }
     }
 
@@ -110,7 +112,7 @@ public final class GameRuleListener implements Listener {
             return;
         }
 
-        this.cancelIfDisabled(event, event.getEntity().getLocation(), GameRule.NATURAL_REGENERATION);
+        this.cancelIfDisabled(event, event.getEntity(), GameRule.NATURAL_REGENERATION);
     }
 
     @EventHandler(ignoreCancelled = true)
@@ -121,12 +123,12 @@ public final class GameRuleListener implements Listener {
 
         GameRule<Boolean> rule =
                 event.getEntity() instanceof Projectile ? GameRule.PROJECTILES_CAN_BREAK_BLOCKS : GameRule.MOB_GRIEFING;
-        this.cancelIfDisabled(event, event.getBlock().getLocation(), rule);
+        this.cancelIfDisabled(event, event.getBlock(), rule);
     }
 
     @EventHandler(ignoreCancelled = true)
     public void onBlockBurn(@NotNull BlockBurnEvent event) {
-        this.cancelIfDisabled(event, event.getBlock().getLocation(), GameRule.DO_FIRE_TICK);
+        this.cancelIfDisabled(event, event.getBlock(), GameRule.DO_FIRE_TICK);
     }
 
     @EventHandler(ignoreCancelled = true)
@@ -134,18 +136,18 @@ public final class GameRuleListener implements Listener {
         Material source = event.getSource().getType();
 
         if (source == Material.FIRE) {
-            this.cancelIfDisabled(event, event.getBlock().getLocation(), GameRule.DO_FIRE_TICK);
+            this.cancelIfDisabled(event, event.getBlock(), GameRule.DO_FIRE_TICK);
             return;
         }
 
         if (Tag.CLIMBABLE.isTagged(source)) {
-            this.cancelIfDisabled(event, event.getBlock().getLocation(), GameRule.DO_VINES_SPREAD);
+            this.cancelIfDisabled(event, event.getBlock(), GameRule.DO_VINES_SPREAD);
         }
     }
 
     @EventHandler(ignoreCancelled = true)
     public void onBlockBreak(@NotNull BlockBreakEvent event) {
-        if (this.isDisabled(event.getBlock().getLocation(), GameRule.DO_TILE_DROPS)) {
+        if (this.isDisabled(event.getBlock(), GameRule.DO_TILE_DROPS)) {
             event.setDropItems(false);
         }
     }
@@ -156,7 +158,7 @@ public final class GameRuleListener implements Listener {
             return;
         }
 
-        if (this.isDisabled(event.getEntity().getLocation(), GameRule.DO_MOB_LOOT)) {
+        if (this.isDisabled(event.getEntity(), GameRule.DO_MOB_LOOT)) {
             event.getDrops().clear();
             event.setDroppedExp(0);
         }
@@ -192,7 +194,7 @@ public final class GameRuleListener implements Listener {
     @EventHandler(ignoreCancelled = true)
     public void onExplosionPrime(@NotNull ExplosionPrimeEvent event) {
         if (event.getEntity() instanceof TNTPrimed) {
-            this.cancelIfDisabled(event, event.getEntity().getLocation(), GameRule.TNT_EXPLODES);
+            this.cancelIfDisabled(event, event.getEntity(), GameRule.TNT_EXPLODES);
         }
     }
 
@@ -209,7 +211,7 @@ public final class GameRuleListener implements Listener {
 
     @EventHandler(ignoreCancelled = true)
     public void onBlockExplode(@NotNull BlockExplodeEvent event) {
-        if (this.isDisabled(event.getBlock().getLocation(), GameRule.BLOCK_EXPLOSION_DROP_DECAY)) {
+        if (this.isDisabled(event.getBlock(), GameRule.BLOCK_EXPLOSION_DROP_DECAY)) {
             event.setYield(EVERY_BLOCK_DROPS);
         }
     }
@@ -242,23 +244,60 @@ public final class GameRuleListener implements Listener {
         }
     }
 
+    private void cancelIfDisabled(Cancellable event, Block block, GameRule<Boolean> rule) {
+        if (this.isDisabled(block, rule)) {
+            event.setCancelled(true);
+        }
+    }
+
+    private void cancelIfDisabled(Cancellable event, Entity entity, GameRule<Boolean> rule) {
+        if (this.isDisabled(entity, rule)) {
+            event.setCancelled(true);
+        }
+    }
+
     private void cancelIfDisabled(Cancellable event, Location location, GameRule<Boolean> rule) {
         if (this.isDisabled(location, rule)) {
             event.setCancelled(true);
         }
     }
 
+    private boolean isDisabled(Block block, GameRule<Boolean> rule) {
+        return isOff(this.valueOf(block, rule));
+    }
+
+    private boolean isDisabled(Entity entity, GameRule<Boolean> rule) {
+        return isOff(this.valueOf(entity, rule));
+    }
+
     private boolean isDisabled(Location location, GameRule<Boolean> rule) {
-        return this.valueOf(location, rule).filter(enabled -> !enabled).isPresent();
+        return isOff(this.query.resolve(location, GameRuleFlags.of(rule)));
+    }
+
+    private static boolean isOff(Optional<Boolean> value) {
+        return value.isPresent() && !value.get();
     }
 
     /** disableRaids is the one rule where true means "stop", so it reads the other way round. */
     private boolean raidsAreBlocked(Location location) {
-        return this.valueOf(location, GameRule.DISABLE_RAIDS).orElse(false);
+        return this.query
+                .resolve(location, GameRuleFlags.of(GameRule.DISABLE_RAIDS))
+                .orElse(false);
     }
 
-    /** The value the region gives a rule, or empty when no region here sets it. */
-    private Optional<Boolean> valueOf(Location location, GameRule<Boolean> rule) {
-        return this.query.resolve(location, GameRuleFlags.of(rule));
+    /** The value the region gives a rule at a block, or empty when no region there sets it. */
+    private Optional<Boolean> valueOf(Block block, GameRule<Boolean> rule) {
+        return this.query.resolve(
+                block.getWorld().key(), block.getX(), block.getY(), block.getZ(), GameRuleFlags.of(rule));
+    }
+
+    /** The same, at the block an entity stands in; entities carry their coordinates, no Location is built. */
+    private Optional<Boolean> valueOf(Entity entity, GameRule<Boolean> rule) {
+        return this.query.resolve(
+                entity.getWorld().key(),
+                Location.locToBlock(entity.getX()),
+                Location.locToBlock(entity.getY()),
+                Location.locToBlock(entity.getZ()),
+                GameRuleFlags.of(rule));
     }
 }

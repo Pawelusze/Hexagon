@@ -8,7 +8,7 @@ import dev.rollczi.litecommands.suggestion.SuggestionContext;
 import dev.rollczi.litecommands.suggestion.SuggestionResult;
 import io.github.pawelusze.hexagon.api.flag.Flag;
 import io.github.pawelusze.hexagon.api.flag.FlagRegistry;
-import io.github.pawelusze.hexagon.configuration.MessagesConfig;
+import io.github.pawelusze.hexagon.configuration.MessagesConfiguration;
 import io.github.pawelusze.hexagon.text.Messenger;
 import java.util.function.Supplier;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
@@ -19,9 +19,9 @@ public final class FlagArgument extends ArgumentResolver<CommandSender, Flag<?>>
 
     private final FlagRegistry flags;
     private final Messenger messenger;
-    private final Supplier<MessagesConfig> messages;
+    private final Supplier<MessagesConfiguration> messages;
 
-    public FlagArgument(FlagRegistry flags, Messenger messenger, Supplier<MessagesConfig> messages) {
+    public FlagArgument(FlagRegistry flags, Messenger messenger, Supplier<MessagesConfiguration> messages) {
         this.flags = flags;
         this.messenger = messenger;
         this.messages = messages;
@@ -30,10 +30,11 @@ public final class FlagArgument extends ArgumentResolver<CommandSender, Flag<?>>
     @Override
     protected @NotNull ParseResult<Flag<?>> parse(
             @NotNull Invocation<CommandSender> invocation, @NotNull Argument<Flag<?>> context, @NotNull String input) {
-        return flags.find(input)
+        return this.flags
+                .find(input)
                 .<ParseResult<Flag<?>>>map(ParseResult::success)
-                .orElseGet(() -> ParseResult.failure(
-                        this.messenger.message(messages.get().flag.unknown, Placeholder.unparsed("input", input))));
+                .orElseGet(() -> ParseResult.failure(this.messenger.message(
+                        this.messages.get().flag.unknown, Placeholder.unparsed("input", input))));
     }
 
     @Override
@@ -41,6 +42,6 @@ public final class FlagArgument extends ArgumentResolver<CommandSender, Flag<?>>
             @NotNull Invocation<CommandSender> invocation,
             @NotNull Argument<Flag<?>> argument,
             @NotNull SuggestionContext context) {
-        return flags.all().stream().map(Flag::name).collect(SuggestionResult.collector());
+        return this.flags.all().stream().map(Flag::name).collect(SuggestionResult.collector());
     }
 }

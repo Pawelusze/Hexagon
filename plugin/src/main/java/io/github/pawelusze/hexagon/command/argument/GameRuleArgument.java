@@ -8,7 +8,7 @@ import dev.rollczi.litecommands.suggestion.SuggestionContext;
 import dev.rollczi.litecommands.suggestion.SuggestionResult;
 import io.github.pawelusze.hexagon.api.flag.Flag;
 import io.github.pawelusze.hexagon.api.flag.GameRuleFlags;
-import io.github.pawelusze.hexagon.configuration.MessagesConfig;
+import io.github.pawelusze.hexagon.configuration.MessagesConfiguration;
 import io.github.pawelusze.hexagon.text.Messenger;
 import java.util.function.Supplier;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
@@ -21,9 +21,9 @@ import org.jetbrains.annotations.NotNull;
 public final class GameRuleArgument extends ArgumentResolver<CommandSender, GameRule<Boolean>> {
 
     private final Messenger messenger;
-    private final Supplier<MessagesConfig> messages;
+    private final Supplier<MessagesConfiguration> messages;
 
-    public GameRuleArgument(@NotNull Messenger messenger, @NotNull Supplier<MessagesConfig> messages) {
+    public GameRuleArgument(@NotNull Messenger messenger, @NotNull Supplier<MessagesConfiguration> messages) {
         this.messenger = messenger;
         this.messages = messages;
     }

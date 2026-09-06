@@ -13,9 +13,9 @@ import org.jetbrains.annotations.NotNull;
 /** Enforces {@code elytra}, {@code totem} and {@code potion-effects}. */
 public final class PlayerAbilityListener implements Listener {
 
-    private final AccessService access;
+    private final AccessControl access;
 
-    public PlayerAbilityListener(@NotNull AccessService access) {
+    public PlayerAbilityListener(@NotNull AccessControl access) {
         this.access = access;
     }
 
@@ -24,7 +24,7 @@ public final class PlayerAbilityListener implements Listener {
         if (!event.isGliding() || !(event.getEntity() instanceof Player player)) {
             return;
         }
-        if (access.denies(player, player.getLocation(), Flags.ELYTRA)) {
+        if (this.access.denies(player, player, Flags.ELYTRA)) {
             event.setCancelled(true);
         }
     }
@@ -34,7 +34,7 @@ public final class PlayerAbilityListener implements Listener {
         if (!(event.getEntity() instanceof Player player)) {
             return;
         }
-        if (access.denies(player, player.getLocation(), Flags.TOTEM)) {
+        if (this.access.denies(player, player, Flags.TOTEM)) {
             event.setCancelled(true);
         }
     }
@@ -45,7 +45,7 @@ public final class PlayerAbilityListener implements Listener {
         if (effect == null || !(event.getEntity() instanceof Player player)) {
             return;
         }
-        if (access.denies(player, player.getLocation(), Flags.POTION_EFFECTS, effect.getType())) {
+        if (this.access.denies(player, player, Flags.POTION_EFFECTS, effect.getType())) {
             event.setCancelled(true);
         }
     }

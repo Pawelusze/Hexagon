@@ -25,8 +25,8 @@ public final class HexagonConfiguration {
     private final Path directory;
     private final FlagRegistry flags;
 
-    private volatile PluginConfig plugin = new PluginConfig();
-    private volatile MessagesConfig messages = new MessagesConfig();
+    private volatile PluginConfiguration plugin = new PluginConfiguration();
+    private volatile MessagesConfiguration messages = new MessagesConfiguration();
     private volatile RegionDefaults regionDefaults = new RegionDefaults(0, FlagMap.empty());
 
     public HexagonConfiguration(@NotNull Path directory, @NotNull FlagRegistry flags) {
@@ -40,11 +40,11 @@ public final class HexagonConfiguration {
      * @return false when a file could not be read, leaving the previous values in place
      */
     public boolean reload() {
-        PluginConfig loadedPlugin;
-        MessagesConfig loadedMessages;
+        PluginConfiguration loadedPlugin;
+        MessagesConfiguration loadedMessages;
         try {
-            loadedPlugin = this.read(PluginConfig.class, "config.yml", PluginConfig.HEADER);
-            loadedMessages = this.read(MessagesConfig.class, "messages.yml", MessagesConfig.HEADER);
+            loadedPlugin = this.read(PluginConfiguration.class, "config.yml", PluginConfiguration.HEADER);
+            loadedMessages = this.read(MessagesConfiguration.class, "messages.yml", MessagesConfiguration.HEADER);
         } catch (ConfigurateException exception) {
             LOG.error("Could not read the configuration", exception);
             return false;
@@ -57,11 +57,11 @@ public final class HexagonConfiguration {
         return true;
     }
 
-    public @NotNull PluginConfig plugin() {
+    public @NotNull PluginConfiguration plugin() {
         return this.plugin;
     }
 
-    public @NotNull MessagesConfig messages() {
+    public @NotNull MessagesConfiguration messages() {
         return this.messages;
     }
 
@@ -70,7 +70,7 @@ public final class HexagonConfiguration {
     }
 
     private <T> T read(Class<T> type, String fileName, String header) throws ConfigurateException {
-        return new YamlConfigFile<>(type, this.directory.resolve(fileName), header).load();
+        return new YamlConfigurationFile<>(type, this.directory.resolve(fileName), header).load();
     }
 
     private FlagMap parseFlags(Map<String, String> configured) {

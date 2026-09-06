@@ -59,10 +59,9 @@ public final class DefaultRegionService implements RegionService {
         for (Region region : this.repository.loadAll()) {
             if (snapshot.regions.putIfAbsent(region.id(), region) != null) {
                 LOG.warn("Two region files both claim the id '{}'; keeping the first one", region.id());
-                continue;
             }
-            snapshot.index.add(region);
         }
+        snapshot.index.addAll(snapshot.regions.values());
         return snapshot;
     }
 

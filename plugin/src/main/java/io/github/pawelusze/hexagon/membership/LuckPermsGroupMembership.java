@@ -20,7 +20,7 @@ final class LuckPermsGroupMembership implements GroupMembership {
 
     @Override
     public boolean isInGroup(@NotNull Player player, @NotNull String group) {
-        PlayerAdapter<Player> adapter = luckPerms.getPlayerAdapter(Player.class);
+        PlayerAdapter<Player> adapter = this.luckPerms.getPlayerAdapter(Player.class);
         User user = adapter.getUser(player);
         return user.getInheritedGroups(adapter.getQueryOptions(player)).stream()
                 .map(Group::getName)
@@ -29,7 +29,7 @@ final class LuckPermsGroupMembership implements GroupMembership {
 
     @Override
     public @NotNull Collection<String> knownGroups() {
-        return luckPerms.getGroupManager().getLoadedGroups().stream()
+        return this.luckPerms.getGroupManager().getLoadedGroups().stream()
                 .map(Group::getName)
                 .sorted()
                 .toList();

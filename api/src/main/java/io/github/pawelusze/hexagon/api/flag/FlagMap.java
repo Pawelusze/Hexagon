@@ -35,7 +35,7 @@ public final class FlagMap {
      * @return the value, or empty if the flag is not set
      */
     public <T> @NotNull Optional<T> get(@NotNull Flag<T> flag) {
-        return Optional.ofNullable(cast(values.get(flag)));
+        return Optional.ofNullable(cast(this.values.get(flag)));
     }
 
     /**
@@ -45,7 +45,7 @@ public final class FlagMap {
      * @return the serialized value, or empty if the flag is not set
      */
     public @NotNull Optional<String> serialized(@NotNull Flag<?> flag) {
-        return Optional.ofNullable(serialize(flag, values.get(flag)));
+        return Optional.ofNullable(serialize(flag, this.values.get(flag)));
     }
 
     /**
@@ -55,7 +55,7 @@ public final class FlagMap {
      * @return true if the flag has a value
      */
     public boolean contains(@NotNull Flag<?> flag) {
-        return values.containsKey(flag);
+        return this.values.containsKey(flag);
     }
 
     /**
@@ -79,7 +79,7 @@ public final class FlagMap {
      * @return the copy, or this map if the flag was not set
      */
     public @NotNull FlagMap without(@NotNull Flag<?> flag) {
-        if (!values.containsKey(flag)) {
+        if (!this.values.containsKey(flag)) {
             return this;
         }
         Map<Flag<?>, Object> updated = new HashMap<>(values);
@@ -93,7 +93,7 @@ public final class FlagMap {
      * @return an unmodifiable set of flags
      */
     public @NotNull Set<Flag<?>> flags() {
-        return values.keySet();
+        return this.values.keySet();
     }
 
     /**
@@ -102,7 +102,7 @@ public final class FlagMap {
      * @return true if empty
      */
     public boolean isEmpty() {
-        return values.isEmpty();
+        return this.values.isEmpty();
     }
 
     /**
@@ -111,7 +111,7 @@ public final class FlagMap {
      * @return the size
      */
     public int size() {
-        return values.size();
+        return this.values.size();
     }
 
     @SuppressWarnings("unchecked")
@@ -128,16 +128,16 @@ public final class FlagMap {
 
     @Override
     public boolean equals(@Nullable Object other) {
-        return other instanceof FlagMap that && values.equals(that.values);
+        return other instanceof FlagMap that && this.values.equals(that.values);
     }
 
     @Override
     public int hashCode() {
-        return values.hashCode();
+        return this.values.hashCode();
     }
 
     @Override
     public @NotNull String toString() {
-        return values.toString();
+        return this.values.toString();
     }
 }

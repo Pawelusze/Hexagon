@@ -79,13 +79,15 @@ regions, same blocks, one JVM. Apple M2, JDK 25, WorldGuard 7.0.14, 2 forks × 5
 
 | Regions | Hexagon | WorldGuard, chunk cache | WorldGuard, R-tree |
 | --- | --- | --- | --- |
-| 100 | **20 ns** | 25 ns | 104 ns |
-| 10 000 | 103 ns | **28 ns** | 921 ns |
-| 50 000 | 131 ns | **57 ns** | 2 549 ns |
+| 100 | **15 ns** | 30 ns | 129 ns |
+| 10 000 | **20 ns** | 27 ns | 1 218 ns |
+| 50 000 | **47 ns** | 58 ns | 2 365 ns |
 
-Hexagon beats the R-tree — WorldGuard's answer for any chunk it has not cached — by 5× to 19×,
-with no cache, no background thread and no memory that grows with loaded chunks. Once WorldGuard
-has cached a chunk, its table is about 2× faster than Hexagon from 10 000 regions up.
+Hexagon keeps its chunks in a table with primitive `long` keys and answers without locks, a cache
+or a background thread. WorldGuard's R-tree is what answers any chunk it has not cached yet; its
+chunk cache, once warm, comes within a few nanoseconds. Deciding a single flag is cheaper still,
+because the walk stops at the first region that sets it: 9 ns at 100 regions, 16 ns at 10 000,
+29 ns at 50 000.
 
 ```bash
 ./gradlew :hexagon-benchmark:jmh

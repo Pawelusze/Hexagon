@@ -8,7 +8,7 @@ import io.github.pawelusze.hexagon.api.flag.Flags;
 import io.github.pawelusze.hexagon.api.flag.State;
 import io.github.pawelusze.hexagon.api.region.Region;
 import io.github.pawelusze.hexagon.api.region.RegionQuery;
-import io.github.pawelusze.hexagon.configuration.MessagesConfig;
+import io.github.pawelusze.hexagon.configuration.MessagesConfiguration;
 import io.github.pawelusze.hexagon.text.Messenger;
 import java.util.List;
 import java.util.function.Function;
@@ -31,15 +31,15 @@ import org.jetbrains.annotations.NotNull;
 public final class MovementListener implements Listener {
 
     private final RegionQuery query;
-    private final AccessService access;
+    private final AccessControl access;
     private final Messenger messenger;
-    private final Supplier<MessagesConfig> messages;
+    private final Supplier<MessagesConfiguration> messages;
 
     public MovementListener(
             @NotNull RegionQuery query,
-            @NotNull AccessService access,
+            @NotNull AccessControl access,
             @NotNull Messenger messenger,
-            @NotNull Supplier<MessagesConfig> messages) {
+            @NotNull Supplier<MessagesConfiguration> messages) {
         this.query = query;
         this.access = access;
         this.messenger = messenger;
@@ -122,7 +122,7 @@ public final class MovementListener implements Listener {
     private void announce(Player player, List<Region> crossed, Flag<String> flag) {
         for (Region region : crossed) {
             region.flag(flag)
-                    .ifPresent(text -> player.sendMessage(messenger.render(
+                    .ifPresent(text -> player.sendMessage(this.messenger.render(
                             text,
                             Placeholder.unparsed("region", region.id().value()),
                             Placeholder.unparsed("player", player.getName()))));

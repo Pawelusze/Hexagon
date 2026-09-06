@@ -16,7 +16,7 @@ public final class DefaultFlagRegistry implements FlagRegistry {
 
     @Override
     public void register(@NotNull Flag<?> flag) {
-        Flag<?> existing = flags.putIfAbsent(flag.name(), flag);
+        Flag<?> existing = this.flags.putIfAbsent(flag.name(), flag);
         if (existing != null) {
             throw new IllegalArgumentException("Flag '" + flag.name() + "' is already registered");
         }
@@ -24,11 +24,11 @@ public final class DefaultFlagRegistry implements FlagRegistry {
 
     @Override
     public @NotNull Optional<Flag<?>> find(@NotNull String name) {
-        return Optional.ofNullable(flags.get(name.toLowerCase(Locale.ROOT)));
+        return Optional.ofNullable(this.flags.get(name.toLowerCase(Locale.ROOT)));
     }
 
     @Override
     public @NotNull Collection<Flag<?>> all() {
-        return Collections.unmodifiableCollection(flags.values());
+        return Collections.unmodifiableCollection(this.flags.values());
     }
 }

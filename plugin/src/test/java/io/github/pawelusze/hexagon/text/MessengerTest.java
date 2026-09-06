@@ -2,7 +2,7 @@ package io.github.pawelusze.hexagon.text;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import io.github.pawelusze.hexagon.configuration.MessagesConfig;
+import io.github.pawelusze.hexagon.configuration.MessagesConfiguration;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
@@ -20,7 +20,7 @@ class MessengerTest {
 
     @Test
     void rendersTheShippedPaletteIncludingHexClosingTags() {
-        Component rendered = messenger.render(new MessagesConfig().prefix);
+        Component rendered = messenger.render(new MessagesConfiguration().prefix);
 
         assertThat(PlainTextComponentSerializer.plainText().serialize(rendered)).isEqualTo("[Hexagon] ");
     }
