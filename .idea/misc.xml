@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="EntryPointsManager">
+    <list size="4">
+      <item index="0" class="java.lang.String" itemvalue="org.bukkit.event.EventHandler" />
+      <item index="1" class="java.lang.String" itemvalue="dev.rollczi.litecommands.annotations.execute.Execute" />
+      <item index="2" class="java.lang.String" itemvalue="dev.rollczi.litecommands.annotations.command.Command" />
+      <item index="3" class="java.lang.String" itemvalue="org.spongepowered.configurate.objectmapping.ConfigSerializable" />
+    </list>
+  </component>
+</project>
